@@ -1,0 +1,21 @@
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 432px;
+
+    .box {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        border: 1px solid black;
+
+        .cell {
+            display: grid;
+            justify-items: center;
+            align-items: center;
+            height: 48px;
+            width: 48px;
+            border: 1px solid black;
+            font-size: 1.4em;
+        }
+    }
+}

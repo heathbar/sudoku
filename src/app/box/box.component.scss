@@ -1,0 +1,16 @@
+div {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+
+    sudoku-cell {
+        border: 1px solid black;
+        height: 48px;
+        width: 48px;
+
+        display: grid;
+        justify-items: center;
+        align-items: center;
+
+        font-size: 1.4em;
+    }
+}
