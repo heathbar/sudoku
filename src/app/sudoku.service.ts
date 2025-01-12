@@ -18,6 +18,9 @@ export class SudokuService {
   async loadPuzzle(name: string) {
     const puzzle: any = await firstValueFrom(this.http.get(`${name}.json`));
     this.grid.load(puzzle.puzzle);
+
+
+    console.log(this.grid.getRow(3));
     return puzzle.puzzle;
   }
 

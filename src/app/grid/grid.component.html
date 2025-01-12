@@ -3,7 +3,13 @@
     @for (box of puzzle; track box; let b = $index) {
     <div class="box">
         @for (cell of box; track cell; let c = $index) {
-        <div class="cell" [class.given]="given[b][c]()">{{puzzle[b][c]() | onlySudokuDigits}}</div>
+        <div class="cell" [class.given]="given[b][c]()" [class.pencil]="pencil[b][c]">
+            @if (puzzle[b][c]() | onlySudokuDigits){
+            {{puzzle[b][c]() | onlySudokuDigits}}
+            } @else {
+            <small>{{pencil[b][c]?.join('')}}</small>
+            }
+        </div>
         }
     </div>
     }

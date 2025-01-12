@@ -7,21 +7,68 @@ export class GridService {
 
   puzzle: WritableSignal<number>[][] = [[],[],[],[],[],[],[],[],[]];
   givenDigits: WritableSignal<boolean>[][] = [[],[],[],[],[],[],[],[],[]];
+  pencilMarks: number[][][] = [[],[],[],[],[],[],[],[],[]];
 
   constructor() {
     this.reset();
   }
 
   load(puz: number[][]){
+    this.pencilMarks = [[],[],[],[],[],[],[],[],[]];
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
         this.puzzle[r][c].set(puz[r][c]);
         const [box, index] = this.rowColumnToBoxIndex(r, c);
-
         this.givenDigits[box][index].set(puz[r][c] !== 0);
       }
     }
     return this.puzzle;
+  }
+
+  isSolved() {
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        if (this.puzzle[r][c]() === 0) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  getRowNumFromBoxIndex(boxNum: number, index: number) {
+    if (index < 3) {
+      return 0 + Math.floor(boxNum / 3) * 3;
+    } else if (index < 6) {
+      return 1 + Math.floor(boxNum / 3) * 3;
+    } else {
+      return 2 + Math.floor(boxNum / 3) * 3;
+    }
+  }
+
+  getRowFromBoxIndex(boxNum: number, index: number) {
+    return this.getRow(this.getRowNumFromBoxIndex(boxNum, index));
+  }
+
+  getColumnNumFromBoxIndex(boxNum: number, index: number) {
+    if (index % 3 === 0) {
+      return 0 + Math.floor(boxNum % 3) * 3;
+    } else if (index % 3 === 1) {
+      return 1 + Math.floor(boxNum % 3) * 3;
+    } else {
+      return 2 + Math.floor(boxNum % 3) * 3;
+    }
+  }
+  getColumnFromBoxIndex(boxNum: number, index: number) {
+    return this.getColumn(this.getColumnNumFromBoxIndex(boxNum, index));
+  }
+
+  getRow(row: number) {
+    return this.puzzle[row];
+  }
+
+  getColumn(col: number) {
+    return this.puzzle.map(r => r[col]);
   }
 
   getCell(row: number, col: number) {
