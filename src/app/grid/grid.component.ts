@@ -23,4 +23,6 @@ export class GridComponent {
     this.grid.getBox(7),
     this.grid.getBox(8)
   ];
+
+  given: Signal<boolean>[][] = this.grid.givenDigits;
 }

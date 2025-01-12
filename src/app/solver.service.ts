@@ -22,12 +22,12 @@ export class SolverService {
 
     if (this.grid.getBox(box).find(d => d() === digit)) {
       console.log('skip');
-      return true;
+      return false;
     }
 
     // TODO eliminate cells using rows & cols until only 1 remains
 
 
-    return false;
+    return true;
   }
 }

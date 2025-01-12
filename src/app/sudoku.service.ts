@@ -15,12 +15,8 @@ export class SudokuService {
 
   constructor() { }
 
-  fetchPuzzle(name: string) {
-    return this.http.get(`${name}.json`);
-  }
-
   async loadPuzzle(name: string) {
-    const puzzle: any = await firstValueFrom(this.fetchPuzzle(name));
+    const puzzle: any = await firstValueFrom(this.http.get(`${name}.json`));
     this.grid.load(puzzle.puzzle);
     return puzzle.puzzle;
   }

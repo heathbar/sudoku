@@ -1,4 +1,4 @@
-import { Injectable, signal, Signal, WritableSignal } from '@angular/core';
+import { Injectable, signal, WritableSignal } from '@angular/core';
 
 @Injectable({
   providedIn: 'root'
@@ -6,6 +6,7 @@ import { Injectable, signal, Signal, WritableSignal } from '@angular/core';
 export class GridService {
 
   puzzle: WritableSignal<number>[][] = [[],[],[],[],[],[],[],[],[]];
+  givenDigits: WritableSignal<boolean>[][] = [[],[],[],[],[],[],[],[],[]];
 
   constructor() {
     this.reset();
@@ -15,6 +16,9 @@ export class GridService {
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
         this.puzzle[r][c].set(puz[r][c]);
+        const [box, index] = this.rowColumnToBoxIndex(r, c);
+
+        this.givenDigits[box][index].set(puz[r][c] !== 0);
       }
     }
     return this.puzzle;
@@ -22,6 +26,21 @@ export class GridService {
 
   getCell(row: number, col: number) {
     return this.puzzle[row][col];
+  }
+
+  rowColumnToBoxIndex(r: number, c: number): number[] {
+    let box = 0;
+    if (c < 3) {
+      box = 0 + Math.floor(r / 3) * 3;
+    } else if (c < 6) {
+      box = 1 + Math.floor(r / 3) * 3;
+    } else if (c < 9) {
+      box = 2 + Math.floor(r / 3) * 3;
+    }
+
+    let index = c % 3 + (3 * (r % 3));
+
+    return [box, index];
   }
 
   getBox(i: number) {
@@ -58,6 +77,7 @@ export class GridService {
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
         this.puzzle[r][c] = signal(0);
+        this.givenDigits[r][c] = signal(false);
       }
     }
     return this.puzzle;
