@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
 import { GridComponent } from './grid/grid.component';
 import { SudokuService } from './sudoku.service';
+import { GridService } from './grid.service';
 
 @Component({
   selector: 'app-root',
@@ -11,6 +11,7 @@ import { SudokuService } from './sudoku.service';
 })
 export class AppComponent {
   sudoku = inject(SudokuService);
+  grid = inject(GridService);
   
   async loadPuzzle(i: number) {
     this.sudoku.loadPuzzle(`puzzle${i}`);

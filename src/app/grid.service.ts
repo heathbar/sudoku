@@ -7,7 +7,9 @@ export class GridService {
 
   puzzle: WritableSignal<number>[][] = [[],[],[],[],[],[],[],[],[]];
   givenDigits: WritableSignal<boolean>[][] = [[],[],[],[],[],[],[],[],[]];
-  pencilMarks: number[][][] = [[],[],[],[],[],[],[],[],[]];
+  private pencilMarks: Array<Array<Array<number> | undefined>> = [[],[],[],[],[],[],[],[],[]];
+
+  status = signal('Ready');
 
   constructor() {
     this.reset();
@@ -22,6 +24,7 @@ export class GridService {
         this.givenDigits[box][index].set(puz[r][c] !== 0);
       }
     }
+    this.status.set('Loaded');
     return this.puzzle;
   }
 
@@ -115,9 +118,29 @@ export class GridService {
       this.puzzle[r + 2][0 + offset],
       this.puzzle[r + 2][1 + offset],
       this.puzzle[r + 2][2 + offset],
-
-      
     ]
+  }
+
+  getPencilMarks(): number[][][];
+  getPencilMarks(boxNum: number): number[][];
+  getPencilMarks(boxNum: number, index: number): number[];
+  getPencilMarks(boxNum?: number, index?: number) {
+    if (boxNum !== undefined) {
+      if (index !== undefined) {
+        return this.pencilMarks[boxNum][index] || [];
+      }
+      return this.pencilMarks[boxNum];
+    }
+    return this.pencilMarks;
+  }
+
+
+  setPencilMarks(boxNum: number, index:number, value: number[] | undefined) {
+    this.pencilMarks[boxNum][index] = value;
+  }
+
+  clearPencilMarks(boxNum: number, index: number) {
+    this.pencilMarks[boxNum][index] = undefined;
   }
 
   reset() {

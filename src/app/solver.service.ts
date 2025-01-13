@@ -14,41 +14,49 @@ export class SolverService {
   }
 
   async solve() {
+    this.grid.status.set('Solving');
 
     let changesFound = true;
+    let counter = 0;
 
     while (!this.grid.isSolved() && changesFound) {
 
-      this.pencilMark();
-
       changesFound = 
-        this.simpleBoxFind() ||      
+        this.pencilMark() ||
+        this.simpleBoxFind() ||
         this.simpleRowFind() ||
         this.simpleColumnFind() ||
         this.findNakedSingles() ||
         this.everyRowNeedsEveryDigit() ||
-        this.everyColumnNeedsEveryDigit();
-      await this.sleep(100);
+        this.everyColumnNeedsEveryDigit() ||
+        this.everyBoxNeedsEveryDigit();
+      await this.sleep(30);
+      counter++;
+      console.log(counter);
     }
 
     if (!this.grid.isSolved()) {
-      console.log('STUCK!!!!!!!!!!!');
+      this.grid.status.set('Stuck');
     } else {
-      console.log('SOLVED!!!!');
+      this.grid.status.set('Solved');
     }
     
   }
 
-  pencilMark() {
+
+  // Mark the available digits in each cell
+  pencilMark(): boolean {
+    let found = false;
+
+    // First Pass: mark in potential values for each cell, looking at row, column & box to exclude posibilities for the cell.
     for (let boxNum = 0; boxNum < 9; boxNum++) {
       for (let index = 0; index < 9; index++) {
 
         const possibleDigits = [];
-        // const r = this.grid.getRowFromBoxIndex(boxNum, index);
-        // const c = this.grid.getColumnFromBoxIndex(boxNum, index);
 
-        // if the cell is filled, move on
+        // if the cell is filled, erase pencil marks and move on
         if (this.grid.getBox(boxNum)[index]() !== 0) {
+          this.grid.clearPencilMarks(boxNum, index);
           continue;
         }
 
@@ -69,14 +77,124 @@ export class SolverService {
         }
 
         if (possibleDigits.length === 1) {
-          console.log(`Found a naked single (${possibleDigits[0]}) in box ${boxNum}, index ${index}.`);
+          console.log(`Found a naked single while pencil marking (${possibleDigits[0]}) in box ${boxNum}, index ${index}.`);
           this.grid.getBox(boxNum)[index].set(possibleDigits[0]);
+          this.grid.clearPencilMarks(boxNum, index);
+          found = true;
         } else {
-          this.grid.pencilMarks[boxNum][index] = possibleDigits;
+          this.grid.setPencilMarks(boxNum, index, possibleDigits);
         }
       }
     }
-    console.log('Pencil Marks: ', this.grid.pencilMarks);
+
+    // // Second Pass: for each cell consider the two adjacent boxes and remove values that must be elsewhere in the row 
+    const boxNums = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+
+    for (let boxNum = 0; boxNum < 9; boxNum++) {
+      for (let index = 0; index < 9; index++) {
+
+        // if the cell is filled, move on
+        if (this.grid.getBox(boxNum)[index]() !== 0) {
+          continue;
+        }
+
+        this.grid.getPencilMarks(boxNum, index).forEach(d => {
+
+          const horizNeighbors = boxNums.filter(n => n !== boxNum && Math.floor(n / 3) === Math.floor(boxNum / 3));
+
+          const cellsToCheck: number[] = [];
+
+          if (index < 3) {
+            cellsToCheck.push(...[3,4,5,6,7,8]);
+          } else if (index < 6) {
+            cellsToCheck.push(...[0,1,2,6,7,8]);
+          } else {
+            cellsToCheck.push(...[0,1,2,3,4,5]);
+          }
+
+          horizNeighbors.forEach(neighbor => {
+
+            if (this.grid.getBox(neighbor).find(cell => cell() === d)) {
+              return;
+            }
+
+            // try to find a pencil mark in a neighboring box that is in a different row
+            let uncertaintyFound = false;
+            cellsToCheck.forEach(cellNum => {
+              if (this.grid.getPencilMarks(neighbor, cellNum).includes(d)) {
+                uncertaintyFound = true;
+              }
+            });
+
+            if (!uncertaintyFound) {
+              console.log(`Removing ${d} from pencil marks in box ${boxNum}, index ${index} due to the situation in box ${neighbor}.`)
+              this.grid.setPencilMarks(boxNum, index, this.grid.getPencilMarks(boxNum, index)?.filter(p => p !== d));
+
+              if (this.grid.getPencilMarks(boxNum, index).length === 1) {
+                console.log(`Found a naked single while pencil marking (${this.grid.getPencilMarks(boxNum, index)[0]}) in box ${boxNum}, index ${index}.`);
+                this.grid.getBox(boxNum)[index].set(this.grid.getPencilMarks(boxNum, index)[0]);
+                found = true;
+              }
+            }
+          });
+        });
+      }
+    }
+
+    // Third Pass: for each cell consider the two adjacent boxes and remove values that must be elsewhere in the column 
+
+    for (let boxNum = 0; boxNum < 9; boxNum++) {
+      for (let index = 0; index < 9; index++) {
+
+        // if the cell is filled, move on
+        if (this.grid.getBox(boxNum)[index]() !== 0) {
+          continue;
+        }
+
+        this.grid.getPencilMarks(boxNum, index).forEach(d => {
+
+          const vertNeighbors = boxNums.filter(n => n !== boxNum && Math.floor(n % 3) === Math.floor(boxNum % 3));
+
+          const cellsToCheck: number[] = [];
+
+          if (index % 3 === 0) {
+            cellsToCheck.push(...[1,2,4,5,7,8]);
+          } else if (index % 3 === 1) {
+            cellsToCheck.push(...[0,2,3,5,6,8]);
+          } else {
+            cellsToCheck.push(...[0,1,3,4,6,7]);
+          }
+
+          vertNeighbors.forEach(neighbor => {
+
+            if (this.grid.getBox(neighbor).find(cell => cell() === d)) {
+              return;
+            }
+
+            // try to find a pencil mark in a neighboring box that is in a different row
+            let uncertaintyFound = false;
+            cellsToCheck.forEach(cellNum => {
+              if (this.grid.getPencilMarks(neighbor, cellNum).includes(d)) {
+                uncertaintyFound = true;
+              }
+            });
+
+            if (!uncertaintyFound) {
+              console.log(`Removing ${d} from pencil marks in box ${boxNum}, index ${index} due to the situation in box ${neighbor}.`)
+              this.grid.setPencilMarks(boxNum, index, this.grid.getPencilMarks(boxNum, index).filter(p => p !== d));
+
+              if (this.grid.getPencilMarks(boxNum, index).length === 1) {
+                console.log(`Found a naked single while pencil marking (${this.grid.getPencilMarks(boxNum, index)[0]}) in box ${boxNum}, index ${index}.`);
+                this.grid.getBox(boxNum)[index].set(this.grid.getPencilMarks(boxNum, index)[0]);
+                this.grid.clearPencilMarks(boxNum, index);
+                found = true;
+              }
+            }
+          });
+        });
+      }
+    }
+    return found;
   }
 
   simpleBoxFind() {
@@ -91,7 +209,7 @@ export class SolverService {
     return found;
   }
 
-  // returns true if any digits were found
+  
   simpleFindDigitInBox(digit: number, boxNum: number): boolean {
     console.debug(`Finding ${digit} in box ${boxNum + 1}...`);
 
@@ -100,8 +218,6 @@ export class SolverService {
     if (box.find(d => d() === digit)) {
       return false;
     }
-
-    // TODO eliminate cells using rows & cols until only 1 remains
 
     // loop through each cell in the box
     //  if the cell cannot be disqualified due to
@@ -117,8 +233,7 @@ export class SolverService {
         continue;
       }
 
-
-      // inefficient, checking the same row 3 times
+      // Check if the row already contains the digit
       if (this.grid.getRowFromBoxIndex(boxNum, i).find(cell => cell() === digit)) {
         // console.debug(`Found ${digit} in same row`);
         continue;
@@ -296,7 +411,9 @@ export class SolverService {
             continue;
           }
 
-          this.grid.pencilMarks[r].forEach(n => {
+          const [box, index] = this.grid.rowColumnToBoxIndex(r, c);
+
+          this.grid.getPencilMarks(box).forEach(n => {
             if (n?.includes(d)) {
               possiblePositions.push(d);
             }
@@ -326,7 +443,9 @@ export class SolverService {
             continue;
           }
 
-          this.grid.pencilMarks.map(r => r[c]).forEach(n => {
+          const [box, index] = this.grid.rowColumnToBoxIndex(r, c);
+
+          this.grid.getPencilMarks(box).forEach(n => {
             if (n?.includes(d)) {
               possiblePositions.push(d);
             }
@@ -336,6 +455,37 @@ export class SolverService {
         if (possiblePositions.length === 1) {
           console.log(`Every column needs a (${d}) in column ${c}.`);
           this.grid.puzzle[possiblePositions[0]][c].set(d);
+          found = true;
+        }
+      }
+    }
+    return found;
+  }
+
+  everyBoxNeedsEveryDigit() {
+    let found = false;
+
+    for (let boxNum = 0; boxNum < 9; boxNum++) {
+      for (let d = 1; d < 10; d++) {
+        let possiblePositions: number[] = [];
+
+        for (let index = 0; index < 9; index++) {
+
+          // if the current cell contains the digit, skip ahead
+          if (this.grid.getBox(boxNum)[index]() === d) {
+            continue;
+          }
+
+          this.grid.getPencilMarks(boxNum).forEach(n => {
+            if (n?.includes(d)) {
+              possiblePositions.push(d);
+            }
+          });
+        }
+
+        if (possiblePositions.length === 1) {
+          console.log(`Every box needs a (${d}) in box ${boxNum + 1}.`);
+          this.grid.getBox(boxNum)[possiblePositions[0]].set(d);
           found = true;
         }
       }

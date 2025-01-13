@@ -26,7 +26,7 @@ export class GridComponent {
 
   given: Signal<boolean>[][] = this.grid.givenDigits;
   get pencil(): number[][][] {
-    return this.grid.pencilMarks;
+    return this.grid.getPencilMarks();
   }
 
   
